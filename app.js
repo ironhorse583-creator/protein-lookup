@@ -28,6 +28,7 @@ function ProteinLookupApp() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+
     return proteinData
       .filter((item) => {
         const haystack = [
@@ -36,19 +37,27 @@ function ProteinLookupApp() {
           item.category,
           item.why,
           item.searchTerms,
-          ...(item.better || [])
-        ].join(" ").toLowerCase();
+          item.lead,
+          item.arsenic,
+          item.cadmium,
+          item.mercury,
+          item.ingredients,
+          ...(item.better || []),
+        ]
+          .join(" ")
+          .toLowerCase();
 
         const matchesQuery = !q || haystack.includes(q);
         const matchesCategory = category === "All" || item.category === category;
         const matchesVerdict = verdict === "All" || item.verdict === verdict;
+
         return matchesQuery && matchesCategory && matchesVerdict;
       })
       .sort((a, b) => (b.score || 0) - (a.score || 0));
   }, [proteinData, query, category, verdict]);
 
   const topResult = filtered[0];
-  const otherResults = filtered.slice(1, 7);
+  const otherResults = filtered.slice(1, 6);
 
   const verdictTone = (text) => {
     if (!text) return "bg-slate-100 text-slate-800 border-slate-200";
@@ -67,6 +76,18 @@ function ProteinLookupApp() {
     return "text-red-600";
   };
 
+  const formatMetal = (value) => {
+    if (value === null || value === undefined || value === "") return "Unknown";
+    return value;
+  };
+
+  const formatIngredients = (value) => {
+    if (value === null || value === undefined || value === "") {
+      return "No ingredient quality notes yet.";
+    }
+    return value;
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-10">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -75,9 +96,13 @@ function ProteinLookupApp() {
             Protein verification tool
           </div>
           <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">Look up a protein and see how it ranks.</h1>
+            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
+              Look up a protein and see how it ranks.
+            </h1>
             <p className="text-slate-600 text-lg max-w-3xl">
-              Search what you already have in your hand. Get a score, verdict, red flags, transparency, and better alternatives without getting trapped by marketing.
+              Search what you already have in your hand. Get a score, verdict, red flags,
+              actual heavy metal data, ingredient quality, and better alternatives without
+              getting trapped by marketing.
             </p>
           </div>
         </div>
@@ -115,7 +140,9 @@ function ProteinLookupApp() {
               </select>
             </div>
           </div>
-          <div className="text-sm text-slate-500">Showing {filtered.length} result{filtered.length === 1 ? "" : "s"}</div>
+          <div className="text-sm text-slate-500">
+            Showing {filtered.length} result{filtered.length === 1 ? "" : "s"}
+          </div>
         </div>
 
         {loading ? (
@@ -134,13 +161,19 @@ function ProteinLookupApp() {
                   <div className="text-sm uppercase tracking-[0.2em] text-slate-500">Top match</div>
                   <h2 className="text-2xl md:text-3xl font-semibold leading-tight">{topResult.name}</h2>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm">{topResult.brand}</span>
-                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm">{topResult.category}</span>
+                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm">
+                      {topResult.brand}
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm">
+                      {topResult.category}
+                    </span>
                   </div>
                 </div>
                 <div className="bg-slate-50 rounded-3xl px-6 py-4 border border-slate-200 min-w-[150px] text-center">
                   <div className="text-sm text-slate-500">Score</div>
-                  <div className={`text-4xl font-semibold ${scoreTone(topResult.score)}`}>{topResult.score}</div>
+                  <div className={`text-4xl font-semibold ${scoreTone(topResult.score)}`}>
+                    {topResult.score}
+                  </div>
                   <div className="text-xs text-slate-500 pt-1">out of 100</div>
                 </div>
               </div>
@@ -155,12 +188,43 @@ function ProteinLookupApp() {
                   <div className="text-lg font-semibold pt-1">{topResult.redFlag}</div>
                 </div>
                 <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-                  <div className="text-sm text-slate-500">Transparency</div>
+                  <div className="text-sm text-slate-500">Trust level</div>
                   <div className="text-lg font-semibold pt-1">{topResult.transparency}</div>
                 </div>
                 <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-                  <div className="text-sm text-slate-500">Why it was flagged</div>
+                  <div className="text-sm text-slate-500">Key reason</div>
                   <div className="text-base font-medium pt-1">{topResult.why}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-3">
+                  <div className="text-sm text-slate-500">Heavy metals</div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-slate-500">Lead:</span>{" "}
+                      <span className="font-medium">{formatMetal(topResult.lead)}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Arsenic:</span>{" "}
+                      <span className="font-medium">{formatMetal(topResult.arsenic)}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Cadmium:</span>{" "}
+                      <span className="font-medium">{formatMetal(topResult.cadmium)}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Mercury:</span>{" "}
+                      <span className="font-medium">{formatMetal(topResult.mercury)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-3">
+                  <div className="text-sm text-slate-500">Ingredient quality</div>
+                  <div className="text-base font-medium">
+                    {formatIngredients(topResult.ingredients)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -171,11 +235,20 @@ function ProteinLookupApp() {
                 <h3 className="text-xl font-semibold pt-2">Safer alternatives</h3>
               </div>
               <div className="space-y-3">
-                {(topResult.better || []).length ? topResult.better.map((item) => (
-                  <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium">
-                    {item}
-                  </div>
-                )) : (
+                {(topResult.better || []).length ? (
+                  topResult.better.map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => {
+                        setQuery(item);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      className="w-full text-left rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium hover:bg-slate-100 transition"
+                    >
+                      {item}
+                    </button>
+                  ))
+                ) : (
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
                     No alternatives listed yet.
                   </div>
@@ -201,20 +274,39 @@ function ProteinLookupApp() {
                   <div className="space-y-2">
                     <h4 className="text-lg font-semibold leading-snug">{item.name}</h4>
                     <div className="flex flex-wrap gap-2">
-                      <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">{item.brand}</span>
-                      <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">{item.category}</span>
+                      <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">
+                        {item.brand}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs">
+                        {item.category}
+                      </span>
                     </div>
                   </div>
+
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sm text-slate-500">Score</div>
-                      <div className={`text-3xl font-semibold ${scoreTone(item.score)}`}>{item.score}</div>
+                      <div className={`text-3xl font-semibold ${scoreTone(item.score)}`}>
+                        {item.score}
+                      </div>
                     </div>
                     <div className={`rounded-2xl border px-3 py-2 text-xs font-medium ${verdictTone(item.verdict)}`}>
                       {item.verdict}
                     </div>
                   </div>
+
                   <div className="text-sm text-slate-600">{item.why}</div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
+                    <div>Lead: <span className="font-medium text-slate-700">{formatMetal(item.lead)}</span></div>
+                    <div>Arsenic: <span className="font-medium text-slate-700">{formatMetal(item.arsenic)}</span></div>
+                    <div>Cadmium: <span className="font-medium text-slate-700">{formatMetal(item.cadmium)}</span></div>
+                    <div>Mercury: <span className="font-medium text-slate-700">{formatMetal(item.mercury)}</span></div>
+                  </div>
+
+                  <div className="text-xs text-slate-500">
+                    {formatIngredients(item.ingredients)}
+                  </div>
                 </div>
               ))}
             </div>
